@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset = "UTF-8">
+	<title>Graph</title>
+	<style>
+		canvas 
+		{
+
+			display: block;
+			outline: 1px solid black;
+			margin: 0 auto;
+
+		}
+
+	</style>
+</head>
+<body>
+	<canvas id ="canvas" width="1000" height="500"></canvas>
+	<script type="text/javascript">
+
+		var canvas = document.getElementById('canvas');
+		var ctx = canvas.getContext("2d");
+		var pointX = [];
+		var pointY = []; 
+		var color = [];
+		var b = 0;
+		var a = 0;
+		var tmi = 0;
+		var forConnect = []; //ассоциативный массив для двумерного массива connect
+
+		var cLineMax = 0;
+
+
+ 
+		function Create2DArray(rows)
+	    {
+  			var arr = [];
+  			for (var i = 0; i < rows; i++) 
+  			{
+     			arr[i] = [];
+ 	    	}
+
+  			return arr;
+		}
+		var connect = Create2DArray(100);
+		var cLine = Create2DArray(100);
+		var cText = Create2DArray(100);
+		var cTextMax = 0;
+		var mText = Create2DArray(100);
+		var cTextPoint = Create2DArray(100);
+
+		
+		canvas.addEventListener("contextmenu", headler2);
+		canvas.addEventListener("click", headler4);
+
+
+		function headler4(e)
+		{
+			var text;
+			var x = e.offsetX;
+			var y = e.offsetY;
+			var tP1;
+			var tP2;
+			var tVx;
+			var tVy;
+			for(var i = 0; i < cLineMax; i++)
+			{
+				tP1 = cLine[i][0];
+				tP2 = cLine[i][1];
+				tVx = (pointX[tP1] + pointX[tP2]) / 2;
+				tVy = (pointY[tP1] + pointY[tP2]) / 2; // вычисляем середину координат линии
+				if ((x < tVx + 40) && (x > tVx - 40) && (y < tVy + 40) && (y > tVy - 40))
+				{
+					text = prompt('Введите вес ребра', " ");
+					if (text != null)
+					{
+						cTextPoint[cTextMax][0] = tP1;
+						cTextPoint[cTextMax][1] = tP2;
+						console.log(text);
+						console.log('Зашел в поле отправки текста');
+						cText[cTextMax][0] = tVx;
+						cText[cTextMax][1] = tVy;
+						mText[cTextMax][0] = text;
+						console.log(mText[cTextMax]);
+
+						textLine(tVx, tVy, mText[cTextMax]);
+						cTextMax +=1;
+						reload();
+					}
+
+				}
+
+			}
+
+		}
+		/*canvas.onmousedown = function(e)
+		{
+			var a;
+
+			for(var i = 0; i < pointX.length; i++)
+			{
+				if(pointX[i] == e.offsetX && pointY[i] == e.offsetY)
+				{
+					a = i;
+					canvas.onmousemove = function(e)
+					{
+						canvas.onmouseup = function(e)
+						{
+							pointX[a] = e.offsetX;
+							pointY[a] = e.offsetY;
+							canvas.onmousemove = null;
+							reload();
+						}
+					}
+				}
+			}
+
+
+			
+		}
+		*/
+		canvas.addEventListener("dblclick", headler1);
+		function textLine(x,y,str)	
+		{
+			
+			
+			ctx.font = "48px serif";
+			console.log('В фунции текст' + str); 
+			ctx.fillText(str, x + 30, y + 30);
+		}
+
+		function headler2(e) //удаление вершины
+		{
+			
+				
+				for(var i = 0; i < pointX.length; i++)
+				{
+					if(pointX[i] == e.offsetX  && pointY[i] == e.offsetY )
+					{
+						pointX[i] = -1000;
+						pointY[i] = -1000;
+					}
+					if (pointX[i] == -1000)
+					{
+						reload();
+					}
+				}
+ // функция для перерисовки
+							
+
+		}
+
+
+		function reload() // перерисовка страницы при удалении точки или линиии
+		{
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			for (var i = 0; i < pointX.length; i++)
+			{
+				if(pointX[i] != -1000)
+				{
+					if(color[i] == 0)
+					{
+						drawPoint(pointX[i], pointY[i])
+						console.log(forConnect);
+						for(var bx = 0; bx < forConnect[i]; bx++ )
+						{
+							console.log('Почти защел на перекраску линии');
+							if(forConnect[i] != -1)
+							{
+								var tmp;
+								tmp = connect[i][bx];
+								drawLineR(i, tmp);
+								console.log('Зашел на перекраску линии');
+							}
+
+						}
+					}
+					else
+					{
+						drawPointR(pointX[i], pointY[i])
+						for(var bx = 0; bx < forConnect[i]; bx++ )
+						{
+							console.log('Почти защел на перекраску линии');
+							if(forConnect[i] != -1)
+							{
+								var tmp;
+								tmp = connect[i][bx];
+								drawLineR(i, tmp);
+								console.log('Зашел на перекраску линии');
+							}
+						}
+
+
+					}
+				
+				}
+				else
+				{
+					color[i] = -1;
+					forConnect[i] = -1;
+
+				}
+			}
+			for(var i = 0; i < cTextMax; i++)
+			{
+				var id1;
+				var id2;
+				id1 = cTextPoint[i][0];
+				id2 = cTextPoint[i][1];
+				if((pointX[id1] == -1000) || (pointX[id2] == -1000))
+				{
+					console.log('Не пишу текст, ибо эта точка удалена');
+				}
+				else
+				{	
+					cText[i][0] =  (pointX[id1] + pointX[id2]) / 2;
+					cText[i][1] = (pointY[id1] + pointY[id2]) / 2;
+					textLine(cText[i][0], cText[i][1], mText[i]); //отправляем все обратно в фазу написания текста
+
+				}
+			}
+
+		}
+
+
+		function headler1(e) //клик мыши
+		{
+			if(check(pointX, e.offsetX) && check(pointY, e.offsetY))
+			{
+				
+				
+				pointX.push(e.offsetX);
+				pointY.push(e.offsetY);
+				color[b] = 0;
+				b++;
+				console.log(connect);
+				forConnect.push(-1);
+				drawPoint(e.offsetX, e.offsetY);
+				console.log('Поставил точку');
+				console.log(forConnect);
+			}
+
+			else
+			{
+				
+
+				if(color[tmi] == 0)
+				{
+					drawPointR(e.offsetX, e.offsetY);
+					color[tmi] = 1;
+					console.log('Закрасил в крассный');
+					
+				}
+				else
+				{
+					if(color[tmi] == 1)
+					{
+							color[tmi] = 0;
+							drawPoint(e.offsetX, e.offsetY);
+							console.log('Отправил на перекраску');
+							console.log(color);
+							
+					}
+				}
+				for(var d = 0; d < color.length; d++)
+				{
+					if(color[d] == 1)
+					{
+						a++;
+						if(a == 2)
+						{
+							drawLine();
+							console.log('Линия');
+							a = 0;
+						}
+					}
+				}
+
+			}				
+			
+		}
+
+		function drawLineR(id1, id2) // получаем ид точек для перерисовки
+		{
+				if (pointX[id2] == -1000)
+				{
+					
+				}
+				else
+				{
+					ctx.strokeStyle = "green";
+					ctx.lineWidth = 4;
+					ctx.beginPath();
+					ctx.moveTo(pointX[id1], pointY[id1]);
+					ctx.lineTo(pointX[id2], pointY[id2]);
+					ctx.stroke();
+				}
+
+		}
+		function drawLine()
+		{
+			var tmas = [];
+			for(var d = 0; d < color.length; d++)
+			{
+				if(color[d] == 1)
+				{
+					tmas.push(d);
+				}
+			}
+
+				for (var i = 0; i < forConnect[tmas[0]]; i++)
+				{
+					if (tmas[1] == connect[tmas[0]][i])
+					{
+						console.log('связь уже есть'); //проверка на уже существующюю связь
+						control = 1;
+					}
+					
+				}
+				if (control != 1)
+				{	
+					if(forConnect[tmas[0]] == -1)
+					{
+						connect[tmas[0]][0] = tmas[1];
+						forConnect[tmas[0]] = 1;
+						console.log('добавил единственную пока связь');
+						ctx.strokeStyle = "green";
+						ctx.lineWidth = 4;
+						ctx.beginPath();
+						ctx.moveTo(pointX[tmas[0]], pointY[tmas[0]]);
+						ctx.lineTo(pointX[tmas[1]], pointY[tmas[1]]);
+						ctx.stroke();
+						var control = 0;
+						console.log('Подошел к циклу');
+						cLine[cLineMax] = [tmas[0], tmas[1]]; // добавляем в наш массив линий новое значение
+						cLineMax += 1;
+					}
+						
+					else
+					{
+
+						ctx.strokeStyle = "green";
+						ctx.lineWidth = 4;
+						ctx.beginPath();
+						ctx.moveTo(pointX[tmas[0]], pointY[tmas[0]]);
+						ctx.lineTo(pointX[tmas[1]], pointY[tmas[1]]);
+						ctx.stroke();
+						var control = 0;
+						console.log('Подошел к циклу');
+						connect[tmas[0]].push(tmas[1]);
+						console.log('добавляем в двумерный массив = ' + connect[tmas[0]]);
+						cLine[cLineMax] = [tmas[0], tmas[1]]; // добавляем в наш массив линий новое значение
+						cLineMax += 1;
+						
+					}
+				}
+
+
+			for(var i = 0; i < color.length; i++) //перекрашиваем все обратно
+			{
+				if(color[i] == 1)
+				{
+					drawPoint(pointX[i], pointY[i]);
+					color[i] = 0; // обнуляем значения закраски
+				}
+			}
+
+			
+		}
+		
+
+		function drawPointR(x,y)
+		{
+			console.log(b);
+			ctx.beginPath();
+			ctx.clearRect(x - 6, y - 6, 10, 10);
+			ctx.arc(x, y, 5, 0, Math.PI*2, false);
+			ctx.fillStyle = "red";
+			ctx.fill();
+			ctx.closePath();
+		}
+
+		function drawPoint(x, y)
+		{
+			
+			ctx.beginPath();
+			ctx.clearRect(x - 6, y - 6, 10, 10);
+			ctx.arc(x, y, 5, 0, Math.PI*2, false);
+			ctx.fillStyle = "yellow";
+			ctx.fill();
+			ctx.closePath();
+		}
+
+
+		function check(arr, elem) 
+		{
+ 		   for (var i = 0; i < arr.length; i++) 
+ 			{
+        		if (arr[i] == elem) 
+        		{
+        			tmi = i;
+            		return false;
+            		
+        		}
+    		}
+    		return true;
+		}
+
+
+	</script>
+
+</body>
+</html>
